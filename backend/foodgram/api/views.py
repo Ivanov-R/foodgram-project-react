@@ -1,17 +1,27 @@
 from django.shortcuts import get_object_or_404
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             RecipeTag, Shopping_cart, Tag)
-from rest_framework import filters, mixins, viewsets
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 
 # from .permissions import OwnerOrReadOnly
-from .serializers import (IngredientSerializer, RecipeSerializer,
-                          ShoppingCartSerializer, TagSerializer)
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeSerializer, RecipeShortSerializer,
+                          ShoppingCartListSerializer, ShoppingCartSerializer,
+                          TagSerializer)
 
 
-class CreateListViewSet(
-    mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
-):
+class CreateDeleteListViewSet(
+        mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin,
+        viewsets.GenericViewSet):
+    pass
+
+
+class CreateDeleteViewSet(
+        mixins.CreateModelMixin, mixins.DestroyModelMixin,
+        viewsets.GenericViewSet):
     pass
 
 
@@ -34,17 +44,69 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='shopping_cart',
+    )
+    def get_shopping_cart(self, request, pk):
+        """Позволяет текущему пользователю добавлять рецепты
+        в список покупок."""
+        recipe = get_object_or_404(Recipe, pk=pk)
+        if request.method == 'POST':
+            serializer = ShoppingCartSerializer(
+                data={'user': request.user.id, 'shopping_recipe': recipe.id})
+            serializer.is_valid()
+            serializer.save()
+            shopping_cart_serializer = RecipeShortSerializer(recipe)
+            return Response(shopping_cart_serializer.data,
+                            status=status.HTTP_201_CREATED)
+        shopping_cart_recipe = get_object_or_404(
+            Shopping_cart, user=request.user, shopping_recipe=recipe
+        )
+        shopping_cart_recipe.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-class ShoppingCartViewSet(viewsets.ModelViewSet):
+
+class ShoppingCartViewSet(CreateDeleteListViewSet):
     serializer_class = ShoppingCartSerializer
+    queryset = Shopping_cart.objects.all()
+    # permission_classes = (OwnerOrReadOnly,)
+
+    # def get_queryset(self):
+    #     recipe = get_object_or_404(Recipe, pk=self.kwargs.get("recipe_id"))
+    #     new_queryset = Recipe.objects.filter(recipe=recipe)
+    #     return new_queryset
+
+    # def perform_create(self, serializer):
+    #     serializer.save(
+    #         user=self.request.user, shopping_recipe_id=self.kwargs.get(
+    #             "recipe_id"))
+
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return ShoppingCartListSerializer
+    #     return ShoppingCartSerializer
+
+    # @action(detail=False, url_path='download_shopping_cart')
+    # def download_shopping_cart(self, request):
+    #     shopping_cart = Shopping_cart.objects.filter(user=self.request.user)
+    #     serializer = self.get_serializer(shopping_cart, many=True)
+    #     return Response(serializer.data)
+
+
+class FavoriteViewSet(CreateDeleteViewSet):
+    serializer_class = FavoriteSerializer
     # permission_classes = (OwnerOrReadOnly,)
 
     def get_queryset(self):
-        recipe = get_object_or_404(Recipe, pk=self.kwargs.get("recipe_id"))
-        new_queryset = Recipe.objects.filter(recipe=recipe)
+        favorite_recipe = get_object_or_404(
+            Recipe, pk=self.kwargs.get("recipe_id"))
+        new_queryset = Favorite.objects.filter(favorite_recipe=favorite_recipe)
+        # new_queryset = self.request.user.user_favorite.all()
         return new_queryset
 
     def perform_create(self, serializer):
-        serializer.save(
-            user=self.request.user, shopping_recipe=self.kwargs.get(
-                "recipe_id"))
+        serializer.save(user=self.request.user,
+                        favorite_recipe=Recipe.objects.get(
+                            id=self.kwargs.get("recipe_id")))

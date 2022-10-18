@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from users.models import User
 
@@ -20,10 +21,11 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=200)
     text = models.TextField()
-    cooking_time = models.IntegerField()
-    image = models.ImageField("Картинка", upload_to="recipes/media/")
+    cooking_time = models.IntegerField(validators=[MinValueValidator(1)])
+    image = models.ImageField(
+        "Картинка", upload_to="recipes/media/", blank=True)
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="recipes"
     )
@@ -83,7 +85,7 @@ class Favorite(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="user_favorite",
         null=True, blank=True,)
-    favorite = models.ForeignKey(
+    favorite_recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name="favorites",
@@ -95,12 +97,12 @@ class Favorite(models.Model):
         ordering = ["-user"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "favorite"], name="unique favorite"
+                fields=["user", "favorite_recipe"], name="unique favorite"
             )
         ]
 
     def __str__(self):
-        return f'{self.user} {self.favorite}'
+        return f'{self.user} {self.favorite_recipe}'
 
 
 class Shopping_cart(models.Model):
