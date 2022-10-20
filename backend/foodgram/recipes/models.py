@@ -95,11 +95,11 @@ class Favorite(models.Model):
 
     class Meta:
         ordering = ["-user"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "favorite_recipe"], name="unique favorite"
-            )
-        ]
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=["user", "favorite_recipe"], name="unique favorite"
+        #     )
+        # ]
 
     def __str__(self):
         return f'{self.user} {self.favorite_recipe}'

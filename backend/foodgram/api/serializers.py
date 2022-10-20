@@ -1,3 +1,4 @@
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             RecipeTag, Shopping_cart, Tag)
 from rest_framework import serializers
@@ -53,16 +54,10 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field="username",
-        default=serializers.CurrentUserDefault(),
-    )
-    favorite_recipe = serializers.StringRelatedField(read_only=True)
 
     class Meta:
-        fields = ("user", "favorite_recipe")
         model = Favorite
+        fields = ('user', 'favorite_recipe')
         validators = [
             UniqueTogetherValidator(
                 queryset=Favorite.objects.all(),
@@ -74,3 +69,53 @@ class FavoriteSerializer(serializers.ModelSerializer):
     #             "Нельзя подписываться на самого себя."
     #         )
     #     return data
+
+
+# class UserCreateSerializer(UserCreateSerializer):
+
+#     class Meta:
+#         fields = ('email', 'id', 'username', 'first_name', 'last_name')
+
+
+# class UserCreateSerializer(UserCreateSerializer):
+
+#     class Meta:
+#         fields = ('email', 'id', 'username', 'first_name', 'last_name')
+
+class RecipesReadSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    author = CustomUserSerializer(read_only=True)
+    ingredients = IngredientInRecipeSerializer(many=True)
+    is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            "id",
+            "tags",
+            "author",
+            "ingredients",
+            "is_favorited",
+            "is_in_shopping_list",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+        )
+
+    def get_user(self):
+        return self.context["request"].user
+
+    def get_is_favorited(self, obj):
+        user = self.context.get("request").user
+        if user.is_anonymous:
+            return False
+        return user.favorites.filter(recipe=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get("request").user
+        if user.is_anonymous:
+            return False
+        return user.shopping_cart.filter(recipe=obj).exists()
