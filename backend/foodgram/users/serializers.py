@@ -1,33 +1,49 @@
-from djoser.serializers import UserCreateSerializer, UserSerializer
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            RecipeTag, Shopping_cart, Tag)
+# from api.serializers import RecipeShortSerializer
+from djoser.serializers import UserSerializer
+from recipes.models import Recipe
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
 
 from .models import Subscription, User
 
+# from rest_framework.relations import SlugRelatedField
+# from rest_framework.validators import UniqueTogetherValidator
 
-class UserSerializer(serializers.ModelSerializer):
-    author = SlugRelatedField(slug_field="username", read_only=True)
-    tags = serializers.StringRelatedField(many=True, read_only=True)
-    ingredients = serializers.StringRelatedField(
-        many=True, read_only=True)
+
+class RecipeShortSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('name', 'text', 'cooking_time',
-                  'author', 'tags', 'ingredients')
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class UserSubscribedSerializer(UserSerializer):
+class UserGetSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'author', 'user')
+        fields = ('id', 'email', 'username', 'first_name',
+                  'last_name', 'is_subscribed')
 
     def get_is_subscribed(self, value):
         request = self.context.get('request')
+        if request.user.is_anonymous:
+            return False
         return Subscription.objects.filter(
-            user=request.user, follower=value).exists()
+            user=request.user, author=value).exists()
+
+
+class SubscriptionSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = RecipeShortSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'first_name',
+                  'last_name', 'is_subscribed', 'recipes')
+
+    def get_is_subscribed(self, value):
+        request = self.context.get('request')
+        if request.user.is_anonymous:
+            return False
+        return Subscription.objects.filter(
+            user=request.user, author=value).exists()

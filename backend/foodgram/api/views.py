@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             RecipeTag, Shopping_cart, Tag)
@@ -5,11 +6,13 @@ from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
+from users.serializers import RecipeShortSerializer
 
 # from .permissions import OwnerOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
-                          RecipeSerializer, RecipeShortSerializer,
-                          ShoppingCartListSerializer, ShoppingCartSerializer,
+                          RecipeDestroySerializer, RecipeGetSerializer,
+                          RecipeIngredientGetSerializer,
+                          RecipePostPatchSerializer, ShoppingCartSerializer,
                           TagSerializer)
 
 
@@ -39,11 +42,19 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
     # permission_classes = (OwnerOrReadOnly,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RecipeGetSerializer
+        if self.action == 'retrieve':
+            return RecipeGetSerializer
+        if self.action == 'destroy':
+            return RecipeDestroySerializer
+        return RecipePostPatchSerializer
 
     @action(
         detail=True,
@@ -67,6 +78,35 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         shopping_cart_recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # @action(
+    #     detail=False,
+    #     url_path='download_shopping_cart',
+    # )
+    # def download_shopping_cart(self, request):
+    #     user = self.request.user
+    #     ingredients = 'Cписок покупок:'
+    #     shopping_cart = user.shopping_cart.values(
+    #         'ingredient__name', 'ingredient__measurement_unit'
+    #     ).annotate(amount=sum('amount'))
+    #     for num, i in enumerate(shopping_cart):
+    #         ingredients += (
+    #             f"\n{i['ingredient__name']} - "
+    #             f"{i['amount']} {i['ingredient__measurement_unit']}"
+    #         )
+    #         if num < shopping_cart.count() - 1:
+    #             ingredients += ', '
+    #     file = 'shopping_list'
+    #     response = HttpResponse(
+    #         ingredients, 'Content-Type: application/pdf'
+    #     )
+    #     response['Content-Disposition'] = f'attachment; filename="{file}.pdf"'
+    #     return response
+        # print(shopping_cart)
+        # for recipe in shopping_cart:
+
+        #     # serializer = RecipeIngredientGetSerializer(shopping_cart, many=True)
+        # return Response(status=status.HTTP_200_OK)
 
     @action(
         detail=True,
@@ -136,3 +176,4 @@ class FavoriteViewSet(CreateDeleteViewSet):
         serializer.save(user=self.request.user,
                         favorite_recipe=Recipe.objects.get(
                             id=self.kwargs.get("recipe_id")))
+

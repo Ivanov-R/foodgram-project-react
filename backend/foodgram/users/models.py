@@ -21,16 +21,16 @@ class User(AbstractUser):
         blank=False,
         null=False, unique=True
     )
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['first_name', 'last_name',
-                       'username']
+                       'email']
 
 
 class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='author',
+        related_name='following',
     )
     user = models.ForeignKey(
         User,

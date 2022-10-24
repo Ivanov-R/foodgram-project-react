@@ -5,7 +5,7 @@ from users.models import User
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    measurement_unit = models.CharField(max_length=30, unique=True)
+    measurement_unit = models.CharField(max_length=30)
 
     def __str__(self) -> str:
         return self.name
@@ -13,7 +13,7 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    color = models.CharField(max_length=30, unique=True)
+    color = models.CharField(max_length=30)
     slug = models.SlugField(unique=True)
 
     def __str__(self) -> str:
@@ -83,7 +83,7 @@ class RecipeTag(models.Model):
 
 class Favorite(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="user_favorite",
+        User, on_delete=models.CASCADE, related_name="favorites",
         null=True, blank=True,)
     favorite_recipe = models.ForeignKey(
         Recipe,
@@ -107,12 +107,12 @@ class Favorite(models.Model):
 
 class Shopping_cart(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="user_shopping_recipe",
+        User, on_delete=models.CASCADE, related_name="shopping_cart",
         null=True, blank=True,)
     shopping_recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name="shopping_cart",
+        related_name="shopping_cart_recipes",
         null=True,
         blank=True,
     )

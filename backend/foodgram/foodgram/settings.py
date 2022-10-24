@@ -121,9 +121,6 @@ STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
@@ -148,10 +145,25 @@ DJOSER = {
         # 'user_create': 'djoser.serializers.UserCreateSerializer',
         # 'user_create_password_retype': 'djoser.serializers.UserCreatePasswordRetypeSerializer',
         # 'user_delete': 'djoser.serializers.UserDeleteSerializer',
-        # 'user': 'djoser.serializers.UserSerializer',
-        # 'current_user': 'djoser.serializers.UserSerializer',
+        'user': 'users.serializers.UserGetSerializer',
+        'current_user': 'users.serializers.UserGetSerializer',
         # 'token': 'djoser.serializers.TokenSerializer',
         # 'token_create': 'djoser.serializers.TokenCreateSerializer',
     },
     'HIDE_USERS': False,
+    'PERMISSIONS': {
+        # 'activation': ['rest_framework.permissions.AllowAny'],
+        # 'password_reset': ['rest_framework.permissions.AllowAny'],
+        # 'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        # 'set_password': ['rest_framework.permissions.CurrentUserOrAdmin'],
+        # 'username_reset': ['rest_framework.permissions.AllowAny'],
+        # 'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        # 'set_username': ['rest_framework.permissions.CurrentUserOrAdmin'],
+        # 'user_create': ['rest_framework.permissions.AllowAny'],
+        # 'user_delete': ['rest_framework.permissions.CurrentUserOrAdmin'],
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
+        # 'token_create': ['rest_framework.permissions.AllowAny'],
+        # 'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
+    }
 }
