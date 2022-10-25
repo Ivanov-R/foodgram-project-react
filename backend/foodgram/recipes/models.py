@@ -47,7 +47,7 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE, related_name="ingredients",
         null=True, blank=True,)
-    amount = models.IntegerField()
+    amount = models.IntegerField(null=True, blank=True,)
 
     class Meta:
         ordering = ["-recipe"]

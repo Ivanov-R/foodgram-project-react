@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             RecipeTag, Shopping_cart, Tag)
 from rest_framework import filters, mixins, status, viewsets
@@ -28,6 +29,15 @@ class CreateDeleteViewSet(
     pass
 
 
+# class RecipeFilter(filters.FilterSet):
+#     min_price = filters.NumberFilter(field_name="price", lookup_expr='gte')
+#     max_price = filters.NumberFilter(field_name="price", lookup_expr='lte')
+
+#     class Meta:
+#         model = Recipe
+#         fields = ['author__id', 'tags']
+
+
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -43,6 +53,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     # permission_classes = (OwnerOrReadOnly,)
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_class = [RecipeFilter]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -176,4 +188,3 @@ class FavoriteViewSet(CreateDeleteViewSet):
         serializer.save(user=self.request.user,
                         favorite_recipe=Recipe.objects.get(
                             id=self.kwargs.get("recipe_id")))
-
