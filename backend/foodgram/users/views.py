@@ -1,36 +1,47 @@
-from api.pagination import CustomPagination
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as filter
 from djoser.views import UserViewSet
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            RecipeTag, Shopping_cart, Tag)
-from rest_framework import filters, mixins, status, viewsets
+from recipes.models import Recipe
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Subscription, User
-# from .permissions import OwnerOrReadOnly
-from .serializers import RecipeShortSerializer, SubscriptionSerializer
+from .serializers import SubscriptionGetSerializer, SubscriptionPostSerializer
+
+
+class SubscriptionsFilter(filter.FilterSet):
+    recipes_limit = filter.NumberFilter(
+        field_name='recipes_limit',
+        method='get_recipes_limit',
+    )
+
+    def get_recipes_limit(self, queryset, name, value):
+        if self.request.user.is_authenticated and value:
+            queryset = queryset.filter(
+                following__user__user=self.request.user).values('recipes')[
+                : int(value)]
+            return queryset
+        return queryset
+
+    class Meta:
+        model = Recipe
+        fields = ['recipes_limit', ]
 
 
 class SubscriptionViewSet(UserViewSet):
     queryset = User.objects.all()
-    serializer_class = SubscriptionSerializer
+    serializer_class = SubscriptionGetSerializer
+    filter_class = [SubscriptionsFilter]
 
     @action(
         detail=False,
         url_path='subscriptions',
     )
     def get_subscriptions(self, request):
-        recipes_limit = int(request.query_params['recipes_limit'])
-        if recipes_limit:
-            authors = User.objects.filter(following__user=self.request.user)
-            subscriptions_list = self.paginate_queryset(
-                authors[0].recipes.all()[:recipes_limit])
-
-        else:
-            subscriptions_list = self.paginate_queryset(User.objects.filter(
-                follower=self.request.user))
-        serializer = RecipeShortSerializer(
+        subscriptions_list = self.paginate_queryset(User.objects.filter(
+            following__user=self.request.user))
+        serializer = SubscriptionGetSerializer(
             subscriptions_list, many=True, context={
                 'request': request
             }
@@ -55,12 +66,14 @@ class SubscriptionViewSet(UserViewSet):
             if change_subscription.exists():
                 return Response(f'Вы уже подписаны на {author}',
                                 status=status.HTTP_400_BAD_REQUEST)
-            subscribe = Subscription.objects.create(
-                user=user,
-                author=author
-            )
-            subscribe.save()
-            return Response(f'Вы подписались на {author}',
+            serializer = SubscriptionPostSerializer(
+                data={'user': self.request.user.id, 'author': author.id})
+            serializer.is_valid()
+            serializer.save()
+            subscriptions_serializer = SubscriptionGetSerializer(
+                author, context={'request': request})
+            print(subscriptions_serializer)
+            return Response(subscriptions_serializer.data,
                             status=status.HTTP_201_CREATED)
         if change_subscription.exists():
             change_subscription.delete()

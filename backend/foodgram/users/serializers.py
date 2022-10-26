@@ -1,12 +1,8 @@
-# from api.serializers import RecipeShortSerializer
 from djoser.serializers import UserSerializer
 from recipes.models import Recipe
 from rest_framework import serializers
 
 from .models import Subscription, User
-
-# from rest_framework.relations import SlugRelatedField
-# from rest_framework.validators import UniqueTogetherValidator
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -32,7 +28,7 @@ class UserGetSerializer(UserSerializer):
             user=request.user, author=value).exists()
 
 
-class SubscriptionSerializer(UserSerializer):
+class SubscriptionGetSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeShortSerializer(read_only=True, many=True)
 
@@ -47,3 +43,10 @@ class SubscriptionSerializer(UserSerializer):
             return False
         return Subscription.objects.filter(
             user=request.user, author=value).exists()
+
+
+class SubscriptionPostSerializer(UserSerializer):
+
+    class Meta:
+        model = Subscription
+        fields = ('id', 'user', 'author')

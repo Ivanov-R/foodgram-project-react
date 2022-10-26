@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_filters',
     'corsheaders',
+    'colorfield',
 ]
 
 MIDDLEWARE = [
@@ -133,45 +134,20 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
+    'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
-        # 'activation': 'djoser.serializers.ActivationSerializer',
-        # 'password_reset': 'djoser.serializers.SendEmailResetSerializer',
-        # 'password_reset_confirm': 'djoser.serializers.PasswordResetConfirmSerializer',
-        # 'password_reset_confirm_retype': 'djoser.serializers.PasswordResetConfirmRetypeSerializer',
-        # 'set_password': 'djoser.serializers.SetPasswordSerializer',
-        # 'set_password_retype': 'djoser.serializers.SetPasswordRetypeSerializer',
-        # 'set_username': 'djoser.serializers.SetUsernameSerializer',
-        # 'set_username_retype': 'djoser.serializers.SetUsernameRetypeSerializer',
-        # 'username_reset': 'djoser.serializers.SendEmailResetSerializer',
-        # 'username_reset_confirm': 'djoser.serializers.UsernameResetConfirmSerializer',
-        # 'username_reset_confirm_retype': 'djoser.serializers.UsernameResetConfirmRetypeSerializer',
-        # 'user_create': 'djoser.serializers.UserCreateSerializer',
-        # 'user_create_password_retype': 'djoser.serializers.UserCreatePasswordRetypeSerializer',
-        # 'user_delete': 'djoser.serializers.UserDeleteSerializer',
         'user': 'users.serializers.UserGetSerializer',
         'current_user': 'users.serializers.UserGetSerializer',
-        # 'token': 'djoser.serializers.TokenSerializer',
-        # 'token_create': 'djoser.serializers.TokenCreateSerializer',
     },
     'HIDE_USERS': False,
     'PERMISSIONS': {
-        # 'activation': ['rest_framework.permissions.AllowAny'],
-        # 'password_reset': ['rest_framework.permissions.AllowAny'],
-        # 'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        # 'set_password': ['rest_framework.permissions.CurrentUserOrAdmin'],
-        # 'username_reset': ['rest_framework.permissions.AllowAny'],
-        # 'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        # 'set_username': ['rest_framework.permissions.CurrentUserOrAdmin'],
-        # 'user_create': ['rest_framework.permissions.AllowAny'],
-        # 'user_delete': ['rest_framework.permissions.CurrentUserOrAdmin'],
         'user': ['rest_framework.permissions.IsAuthenticated'],
         'user_list': ['rest_framework.permissions.AllowAny'],
-        # 'token_create': ['rest_framework.permissions.AllowAny'],
-        # 'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
     }
 }
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost',
 ]
 CORS_URLS_REGEX = r'^/api/.*$'

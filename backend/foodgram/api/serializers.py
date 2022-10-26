@@ -1,9 +1,8 @@
 from django.core.validators import MinValueValidator
 from drf_extra_fields.fields import Base64ImageField
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            RecipeTag, Shopping_cart, Tag)
+                            Shopping_cart, Tag)
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 from users.serializers import UserGetSerializer
 
@@ -139,7 +138,6 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
             ingr, _ = RecipeIngredient.objects.get_or_create(
                 recipe=recipe, ingredient=ingredient['id'],
                 amount=ingredient['amount'],)
-        # self.add_tags(validated_data.pop('tags'), recipe)
         return super().update(recipe, validated_data)
 
     def to_representation(self, recipe):
@@ -183,22 +181,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=Favorite.objects.all(),
                 fields=("user", "favorite_recipe"))]
-
-    # def validate(self, data):
-    #     if data["favorite_recipe"].user == self.context["request"].user:
-    #         raise serializers.ValidationError(
-    #             "Нельзя подписываться на самого себя."
-    #         )
-    #     return data
-
-
-# class UserCreateSerializer(UserCreateSerializer):
-
-#     class Meta:
-#         fields = ('email', 'id', 'username', 'first_name', 'last_name')
-
-
-# class UserCreateSerializer(UserCreateSerializer):
-
-#     class Meta:
-#         fields = ('email', 'id', 'username', 'first_name', 'last_name')

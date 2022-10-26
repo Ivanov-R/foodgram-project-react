@@ -1,3 +1,4 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 from users.models import User
@@ -13,7 +14,7 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    color = models.CharField(max_length=30)
+    color = ColorField(default='#FF0000')
     slug = models.SlugField(unique=True)
 
     def __str__(self) -> str:
@@ -95,11 +96,6 @@ class Favorite(models.Model):
 
     class Meta:
         ordering = ["-user"]
-        # constraints = [
-        #     models.UniqueConstraint(
-        #         fields=["user", "favorite_recipe"], name="unique favorite"
-        #     )
-        # ]
 
     def __str__(self):
         return f'{self.user} {self.favorite_recipe}'
