@@ -1,4 +1,5 @@
 {
     "editor.fontLigatures": false,
-    "notebook.editorOptionsCustomizations": {}
+    "notebook.editorOptionsCustomizations": {},
+    "git.ignoreLimitWarning": true
 }
