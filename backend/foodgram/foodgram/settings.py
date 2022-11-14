@@ -140,10 +140,16 @@ DJOSER = {
     }
 }
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1',
-    'http://localhost',
-]
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:3000',
+#     'http://127.0.0.1:3000',
+#     'http://127.0.0.1',
+#     'http://localhost',
+#     'http://localhost:8000',
+#     'http://127.0.0.1:8000',
+#     'http://localhost:80',
+#     'http://127.0.0.1:80',
+# ]
 # CORS_URLS_REGEX = r'^/api/.*$'
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_URLS_REGEX = r'^/.*$'

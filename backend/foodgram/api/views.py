@@ -1,45 +1,36 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filter
 from recipes.models import Favorite, Ingredient, Recipe, Shopping_cart, Tag
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.serializers import RecipeShortSerializer
 
+from .filters import RecipeFilter
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeDestroySerializer, RecipeGetSerializer,
                           RecipePostPatchSerializer, ShoppingCartSerializer,
                           TagSerializer)
 
 
-class RecipeFilter(filter.FilterSet):
-    author = filter.CharFilter()
-    tags = filter.ModelMultipleChoiceFilter(
-        field_name='tags__slug',
-        queryset=Tag.objects.all(),
-        label='Tags',
-        to_field_name='slug'
+def add_to_or_delete_from_it(
+        request, pk, picked_serializer, model, field):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if request.method == 'POST':
+        serializer = picked_serializer(
+            data={'user': request.user.id, f'{field}': recipe.id})
+        print(serializer)
+        serializer.is_valid()
+        serializer.save()
+        new_serializer = RecipeShortSerializer(recipe)
+        return Response(new_serializer.data,
+                        status=status.HTTP_201_CREATED)
+    print(field)
+    recipe_unit = get_object_or_404(
+        model, user=request.user, field=recipe
     )
-    is_favorited = filter.BooleanFilter(method='filter_is_favorite')
-    is_in_shopping_cart = filter.BooleanFilter(
-        method='filter_is_in_shopping_cart')
-
-    class Meta:
-        model = Recipe
-        fields = ('tags', 'author')
-
-    def filter_is_favorite(self, queryset, name, value):
-        user = self.request.user
-        if value and not user.is_anonymous:
-            return queryset.filter(favorites__user=user)
-        return queryset
-
-    def filter_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
-        if value and not user.is_anonymous:
-            return queryset.filter(shopping_list__user=user)
-        return queryset
+    recipe_unit.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -77,21 +68,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         methods=['post', 'delete'],
         url_path='shopping_cart',
     )
-    def add_to_shopping_cart(self, request, pk):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'POST':
-            serializer = ShoppingCartSerializer(
-                data={'user': request.user.id, 'shopping_recipe': recipe.id})
-            serializer.is_valid()
-            serializer.save()
-            shopping_cart_serializer = RecipeShortSerializer(recipe)
-            return Response(shopping_cart_serializer.data,
-                            status=status.HTTP_201_CREATED)
-        shopping_cart_recipe = get_object_or_404(
-            Shopping_cart, user=request.user, shopping_recipe=recipe
-        )
-        shopping_cart_recipe.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def add_to_shopping_cart_or_delete_from_it(self, request, pk):
+        shopping_recipe = 'shopping_recipe'
+        add_to_or_delete_from_it(
+            request, pk, ShoppingCartSerializer, Shopping_cart,
+            shopping_recipe)
 
     @action(
         detail=False,
@@ -102,11 +83,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ingredients = 'Cписок покупок:'
         shopping_cart = user.shopping_cart.values(
             'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(amount=sum('amount'))
+        ).annotate(ingredients_count=sum('amount'))
         for num, i in enumerate(shopping_cart):
             ingredients += (
                 f"\n{i['ingredient__name']} - "
-                f"{i['amount']} {i['ingredient__measurement_unit']}"
+                f"{i['ingredients_count']} {i['ingredient__measurement_unit']}"
             )
             if num < shopping_cart.count() - 1:
                 ingredients += ', '
@@ -122,18 +103,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         methods=['post', 'delete'],
         url_path='favorite',
     )
-    def add_to_favorite(self, request, pk):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'POST':
-            serializer = FavoriteSerializer(
-                data={'user': request.user.id, 'favorite_recipe': recipe.id})
-            serializer.is_valid()
-            serializer.save()
-            favorite_serializer = RecipeShortSerializer(recipe)
-            return Response(favorite_serializer.data,
-                            status=status.HTTP_201_CREATED)
-        fav_recipe = get_object_or_404(
-            Favorite, user=request.user, favorite_recipe=recipe
-        )
-        fav_recipe.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def add_to_favorite_or_delete_from_it(self, request, pk):
+        favorite_recipe = 'favorite_recipe'
+        add_to_or_delete_from_it(
+            request, pk, FavoriteSerializer, Favorite, favorite_recipe)
+        # recipe = get_object_or_404(Recipe, pk=pk)
+        # if request.method == 'POST':
+        #     serializer = FavoriteSerializer(
+        #         data={'user': request.user.id, 'favorite_recipe': recipe.id})
+        #     serializer.is_valid()
+        #     serializer.save()
+        #     favorite_serializer = RecipeShortSerializer(recipe)
+        #     return Response(favorite_serializer.data,
+        #                     status=status.HTTP_201_CREATED)
+        # fav_recipe = get_object_or_404(
+        #     Favorite, user=request.user, favorite_recipe=recipe
+        # )
+        # fav_recipe.delete()
+        # return Response(status=status.HTTP_204_NO_CONTENT)

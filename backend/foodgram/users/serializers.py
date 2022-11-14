@@ -28,7 +28,7 @@ class UserGetSerializer(UserSerializer):
             user=request.user, author=value).exists()
 
 
-class SubscriptionGetSerializer(UserSerializer):
+class SubscriptionGetSerializer(UserGetSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeShortSerializer(read_only=True, many=True)
 
@@ -36,13 +36,6 @@ class SubscriptionGetSerializer(UserSerializer):
         model = User
         fields = ('id', 'email', 'username', 'first_name',
                   'last_name', 'is_subscribed', 'recipes')
-
-    def get_is_subscribed(self, value):
-        request = self.context.get('request')
-        if request.user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=request.user, author=value).exists()
 
 
 class SubscriptionPostSerializer(UserSerializer):
