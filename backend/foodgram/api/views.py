@@ -1,45 +1,39 @@
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filter
-from recipes.models import Favorite, Ingredient, Recipe, Shopping_cart, Tag
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            Shopping_cart, Tag)
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.serializers import RecipeShortSerializer
 
+from .filters import RecipeFilter
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeDestroySerializer, RecipeGetSerializer,
                           RecipePostPatchSerializer, ShoppingCartSerializer,
                           TagSerializer)
 
 
-class RecipeFilter(filter.FilterSet):
-    author = filter.CharFilter()
-    tags = filter.ModelMultipleChoiceFilter(
-        field_name='tags__slug',
-        queryset=Tag.objects.all(),
-        label='Tags',
-        to_field_name='slug'
+def add_to_or_delete_from_it(
+        request, pk, picked_serializer, model, field):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if request.method == 'POST':
+        serializer = picked_serializer(
+            data={'user': request.user.id, f'{field}': recipe.id})
+        print(serializer)
+        serializer.is_valid()
+        serializer.save()
+        new_serializer = RecipeShortSerializer(recipe)
+        return Response(new_serializer.data,
+                        status=status.HTTP_201_CREATED)
+    print(field)
+    recipe_unit = get_object_or_404(
+        model, user=request.user, field=recipe
     )
-    is_favorited = filter.BooleanFilter(method='filter_is_favorite')
-    is_in_shopping_cart = filter.BooleanFilter(
-        method='filter_is_in_shopping_cart')
-
-    class Meta:
-        model = Recipe
-        fields = ('tags', 'author')
-
-    def filter_is_favorite(self, queryset, name, value):
-        user = self.request.user
-        if value and not user.is_anonymous:
-            return queryset.filter(favorites__user=user)
-        return queryset
-
-    def filter_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
-        if value and not user.is_anonymous:
-            return queryset.filter(shopping_list__user=user)
-        return queryset
+    recipe_unit.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -58,6 +52,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
+    filter_backends = (filter.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
@@ -77,7 +72,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         methods=['post', 'delete'],
         url_path='shopping_cart',
     )
-    def add_to_shopping_cart(self, request, pk):
+    def add_to_shopping_cart_or_delete_from_it(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
             serializer = ShoppingCartSerializer(
@@ -100,13 +95,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = self.request.user
         ingredients = 'Cписок покупок:'
-        shopping_cart = user.shopping_cart.values(
+        shopping_cart = RecipeIngredient.objects.filter(
+            recipe__in=Recipe.objects.filter(shopping_cart_recipes__user=user))
+        print(shopping_cart)
+        shopping_cart = shopping_cart.values(
             'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(amount=sum('amount'))
+        ).order_by('ingredient__name').annotate(
+            amount_sum=Sum('amount'))
+
+        print(shopping_cart)
         for num, i in enumerate(shopping_cart):
             ingredients += (
                 f"\n{i['ingredient__name']} - "
-                f"{i['amount']} {i['ingredient__measurement_unit']}"
+                f"{i['amount_sum']} {i['ingredient__measurement_unit']}"
             )
             if num < shopping_cart.count() - 1:
                 ingredients += ', '

@@ -21,9 +21,9 @@ class User(AbstractUser):
         blank=False,
         null=False, unique=True
     )
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name',
-                       'email']
+                       'username']
 
 
 class Subscription(models.Model):

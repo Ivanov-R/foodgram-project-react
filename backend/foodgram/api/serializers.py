@@ -7,6 +7,15 @@ from rest_framework.validators import UniqueTogetherValidator
 from users.serializers import UserGetSerializer
 
 
+def create_or_update_RecipeIngredients(ingredients, recipe):
+    objs = []
+    for ingredient in ingredients:
+        objs.append(RecipeIngredient(
+            recipe=recipe, ingredient=ingredient['id'],
+            amount=ingredient['amount'],))
+    RecipeIngredient.objects.bulk_create(objs)
+
+
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
@@ -66,13 +75,13 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         return self.context["request"].user
 
     def get_is_favorited(self, obj):
-        user = self.context.get("request").user
+        user = self.get_user()
         if user.is_anonymous:
             return False
         return user.favorites.filter(favorite_recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get("request").user
+        user = self.get_user()
         if user.is_anonymous:
             return False
         return user.shopping_cart.filter(shopping_recipe=obj).exists()
@@ -115,17 +124,9 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        print(ingredients)
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            print(ingredient['amount'])
-            ingr, _ = RecipeIngredient.objects.get_or_create(
-                recipe=recipe, ingredient=ingredient['id'],
-                amount=ingredient['amount'],)
-            print(ingr)
-            print(recipe)
-        print(recipe)
+        create_or_update_RecipeIngredients(ingredients, recipe)
         return recipe
 
     def update(self, recipe, validated_data):
@@ -134,10 +135,7 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe.tags.set(tags)
         ingredients = validated_data.pop('ingredients')
-        for ingredient in ingredients:
-            ingr, _ = RecipeIngredient.objects.get_or_create(
-                recipe=recipe, ingredient=ingredient['id'],
-                amount=ingredient['amount'],)
+        create_or_update_RecipeIngredients(ingredients, recipe)
         return super().update(recipe, validated_data)
 
     def to_representation(self, recipe):

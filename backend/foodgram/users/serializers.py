@@ -28,6 +28,14 @@ class UserGetSerializer(UserSerializer):
             user=request.user, author=value).exists()
 
 
+class UserCreateSerializer(UserSerializer):
+
+    class Meta:
+        model = User
+        fields = ('email', 'username', 'first_name',
+                  'last_name', 'password')
+
+
 class SubscriptionGetSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeShortSerializer(read_only=True, many=True)

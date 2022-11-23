@@ -32,14 +32,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'djoser',
     'recipes.apps.RecipesConfig',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
-    'rest_framework.authtoken',
-    'djoser',
     'django_filters',
     'corsheaders',
     'colorfield',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -132,6 +133,7 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'users.serializers.UserGetSerializer',
         'current_user': 'users.serializers.UserGetSerializer',
+        'user_create': 'users.serializers.UserCreateSerializer',
     },
     'HIDE_USERS': False,
     'PERMISSIONS': {

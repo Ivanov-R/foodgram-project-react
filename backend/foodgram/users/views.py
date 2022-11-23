@@ -26,13 +26,14 @@ class SubscriptionsFilter(filter.FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ['recipes_limit', ]
+        fields = ['recipes_limit', 'author']
 
 
 class SubscriptionViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = SubscriptionGetSerializer
     filter_class = [SubscriptionsFilter]
+
 
     @action(
         detail=False,
