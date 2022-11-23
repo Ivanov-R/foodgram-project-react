@@ -5,6 +5,13 @@ from rest_framework import serializers
 from .models import Subscription, User
 
 
+def subscribe(user, author):
+    if user.is_anonymous:
+        return False
+    return Subscription.objects.filter(
+        user=user, author=author).exists()
+
+
 class RecipeShortSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -22,15 +29,11 @@ class UserGetSerializer(UserSerializer):
 
     def get_is_subscribed(self, value):
         request = self.context.get('request')
-        if request.user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=request.user, author=value).exists()
+        user = request.user
+        result = subscribe(user, value)
+        return result
 
 
-<<<<<<< HEAD
-class SubscriptionGetSerializer(UserGetSerializer):
-=======
 class UserCreateSerializer(UserSerializer):
 
     class Meta:
@@ -40,7 +43,6 @@ class UserCreateSerializer(UserSerializer):
 
 
 class SubscriptionGetSerializer(UserSerializer):
->>>>>>> f8ffc31 (all working)
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeShortSerializer(read_only=True, many=True)
 
@@ -48,6 +50,12 @@ class SubscriptionGetSerializer(UserSerializer):
         model = User
         fields = ('id', 'email', 'username', 'first_name',
                   'last_name', 'is_subscribed', 'recipes')
+
+    def get_is_subscribed(self, value):
+        request = self.context.get('request')
+        user = request.user
+        result = subscribe(user, value)
+        return result
 
 
 class SubscriptionPostSerializer(UserSerializer):
