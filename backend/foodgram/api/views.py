@@ -1,6 +1,9 @@
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from recipes.models import Favorite, Ingredient, Recipe, Shopping_cart, Tag
+from django_filters import rest_framework as filter
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            Shopping_cart, Tag)
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -49,6 +52,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
+    filter_backends = (filter.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
@@ -69,10 +73,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='shopping_cart',
     )
     def add_to_shopping_cart_or_delete_from_it(self, request, pk):
-        shopping_recipe = 'shopping_recipe'
-        add_to_or_delete_from_it(
-            request, pk, ShoppingCartSerializer, Shopping_cart,
-            shopping_recipe)
+        recipe = get_object_or_404(Recipe, pk=pk)
+        if request.method == 'POST':
+            serializer = ShoppingCartSerializer(
+                data={'user': request.user.id, 'shopping_recipe': recipe.id})
+            serializer.is_valid()
+            serializer.save()
+            shopping_cart_serializer = RecipeShortSerializer(recipe)
+            return Response(shopping_cart_serializer.data,
+                            status=status.HTTP_201_CREATED)
+        shopping_cart_recipe = get_object_or_404(
+            Shopping_cart, user=request.user, shopping_recipe=recipe
+        )
+        shopping_cart_recipe.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
@@ -81,13 +95,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = self.request.user
         ingredients = 'Cписок покупок:'
-        shopping_cart = user.shopping_cart.values(
+        shopping_cart = RecipeIngredient.objects.filter(
+            recipe__in=Recipe.objects.filter(shopping_cart_recipes__user=user))
+        print(shopping_cart)
+        shopping_cart = shopping_cart.values(
             'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(ingredients_count=sum('amount'))
+        ).order_by('ingredient__name').annotate(
+            amount_sum=Sum('amount'))
+
+        print(shopping_cart)
         for num, i in enumerate(shopping_cart):
             ingredients += (
                 f"\n{i['ingredient__name']} - "
-                f"{i['ingredients_count']} {i['ingredient__measurement_unit']}"
+                f"{i['amount_sum']} {i['ingredient__measurement_unit']}"
             )
             if num < shopping_cart.count() - 1:
                 ingredients += ', '

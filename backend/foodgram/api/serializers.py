@@ -8,10 +8,12 @@ from users.serializers import UserGetSerializer
 
 
 def create_or_update_RecipeIngredients(ingredients, recipe):
+    objs = []
     for ingredient in ingredients:
-        ingr, _ = RecipeIngredient.objects.create(
+        objs.append(RecipeIngredient(
             recipe=recipe, ingredient=ingredient['id'],
-            amount=ingredient['amount'],)
+            amount=ingredient['amount'],))
+    RecipeIngredient.objects.bulk_create(objs)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
