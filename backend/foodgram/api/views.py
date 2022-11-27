@@ -1,45 +1,17 @@
 from django.db.models import Sum
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filter
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            Shopping_cart, Tag)
-from rest_framework import filters, status, viewsets
+                            ShoppingCart, Tag)
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from users.serializers import RecipeShortSerializer
 
 from .filters import RecipeFilter
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeDestroySerializer, RecipeGetSerializer,
                           RecipePostPatchSerializer, ShoppingCartSerializer,
                           TagSerializer)
-
-
-def add_to_or_delete_from_it(
-        request, pk, picked_serializer, model, field):
-    recipe = get_object_or_404(Recipe, pk=pk)
-
-    if request.method == 'POST':
-        data = {}
-        data['user'] = request.user.id
-        data[field] = recipe.id
-        serializer = picked_serializer(data=data)
-        serializer.is_valid()
-        serializer.save()
-        new_serializer = RecipeShortSerializer(recipe)
-        return Response(new_serializer.data,
-                        status=status.HTTP_201_CREATED)
-    if field == 'shopping_recipe':
-        recipe_unit = get_object_or_404(
-            model, user=request.user, shopping_recipe=recipe
-        )
-    else:
-        recipe_unit = get_object_or_404(
-            model, user=request.user, favorite_recipe=recipe
-        )
-    recipe_unit.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+from .utils import add_to_or_delete_from_it
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -81,7 +53,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def add_to_shopping_cart_or_delete_from_it(self, request, pk):
         shopping_recipe = 'shopping_recipe'
         result = add_to_or_delete_from_it(
-            request, pk, ShoppingCartSerializer, Shopping_cart,
+            request, pk, ShoppingCartSerializer, ShoppingCart,
             shopping_recipe)
         return result
 

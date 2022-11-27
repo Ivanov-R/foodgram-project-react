@@ -52,7 +52,6 @@ class SubscriptionViewSet(UserViewSet):
             serializer.save()
             subscriptions_serializer = SubscriptionGetSerializer(
                 author, context={'request': request})
-            print(subscriptions_serializer)
             return Response(subscriptions_serializer.data,
                             status=status.HTTP_201_CREATED)
         if change_subscription.exists():

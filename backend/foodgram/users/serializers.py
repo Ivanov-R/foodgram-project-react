@@ -3,13 +3,7 @@ from recipes.models import Recipe
 from rest_framework import serializers
 
 from .models import Subscription, User
-
-
-def subscribe(user, author):
-    if user.is_anonymous:
-        return False
-    return Subscription.objects.filter(
-        user=user, author=author).exists()
+from .utils import subscribe
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -63,3 +57,10 @@ class SubscriptionPostSerializer(UserSerializer):
     class Meta:
         model = Subscription
         fields = ('id', 'user', 'author')
+
+    def validate_author(self, value):
+        authors = list(User.objects.values_list('email'))
+        result = list(map(lambda x: x[0], authors))
+        if str(value) not in result:
+            raise serializers.ValidationError("Такого автора не существует")
+        return value
