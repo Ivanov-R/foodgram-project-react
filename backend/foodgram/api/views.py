@@ -1,10 +1,11 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django_filters import rest_framework as filter
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
+
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 
 from .filters import RecipeFilter
 from .serializers import (FavoriteSerializer, IngredientSerializer,
