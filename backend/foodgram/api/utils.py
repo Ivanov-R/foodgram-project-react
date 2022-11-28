@@ -1,4 +1,3 @@
-from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -9,14 +8,11 @@ from users.serializers import RecipeShortSerializer
 
 def create_or_update_recipeingredients(ingredients, recipe):
     objs = []
-    try:
-        for ingredient in ingredients:
-            objs.append(RecipeIngredient(
-                recipe=recipe, ingredient=ingredient['id'],
-                amount=ingredient['amount'],))
-        RecipeIngredient.objects.bulk_create(objs)
-    except IntegrityError:
-        raise IntegrityError("Ингредиенты или тэги дублируются")
+    for ingredient in ingredients:
+        objs.append(RecipeIngredient(
+            recipe=recipe, ingredient=ingredient['id'],
+            amount=ingredient['amount'],))
+    RecipeIngredient.objects.bulk_create(objs)
 
 
 def add_to_or_delete_from_it(
@@ -28,8 +24,8 @@ def add_to_or_delete_from_it(
         data['user'] = request.user.id
         data[field] = recipe.id
         serializer = picked_serializer(data=data)
-        serializer.is_valid()
-        serializer.save()
+        if serializer.is_valid():
+            serializer.save()
         new_serializer = RecipeShortSerializer(recipe)
         return Response(new_serializer.data,
                         status=status.HTTP_201_CREATED)

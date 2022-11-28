@@ -6,7 +6,6 @@ from rest_framework.validators import UniqueTogetherValidator
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from users.serializers import UserGetSerializer
-
 from .utils import create_or_update_recipeingredients
 
 
@@ -112,6 +111,26 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
             "cooking_time",
         )
 
+    def validate_tags(self, value):
+        for tag in value:
+            if not Tag.objects.filter(name=tag).exists():
+                raise serializers.ValidationError("Такого тэга не существует")
+        tags_set = set(value)
+        if len(value) != len(tags_set):
+            raise serializers.ValidationError("Тэги не должны дублироваться")
+        return value
+
+    def validate_ingredients(self, value):
+        for ingredient in value:
+            if not Ingredient.objects.filter(name=ingredient).exists():
+                raise serializers.ValidationError(
+                    "Такого ингредиента не существует")
+        ingredients_set = set(value)
+        if len(value) != len(ingredients_set):
+            raise serializers.ValidationError(
+                "Ингредиенты не должны дублироваться")
+        return value
+
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -151,22 +170,19 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ('user', 'shopping_recipe')
-
-    validators = [
-        UniqueTogetherValidator(
-            queryset=ShoppingCart.objects.all(),
-            fields=(
-                'user',
-                'shopping_recipe',
-            ),
-            message="Рецепт уже входит в список покупок",
-        )
-    ]
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=(
+                    'user',
+                    'shopping_recipe',
+                ),
+                message="Рецепт уже входит в список покупок",
+            )
+        ]
 
     def validate_shopping_recipe(self, value):
-        recipes = list(Recipe.objects.values_list('name'))
-        result = list(map(lambda x: x[0], recipes))
-        if str(value) not in result:
+        if not Recipe.objects.filter(name=value).exists():
             raise serializers.ValidationError("Такого рецепта не существует")
         return value
 
@@ -190,8 +206,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 fields=("user", "favorite_recipe"))]
 
     def validate_favorite_recipe(self, value):
-        recipes = list(Recipe.objects.values_list('name'))
-        result = list(map(lambda x: x[0], recipes))
-        if str(value) not in result:
+        if not Recipe.objects.filter(name=value).exists():
             raise serializers.ValidationError("Такого рецепта не существует")
         return value

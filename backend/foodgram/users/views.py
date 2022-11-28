@@ -48,8 +48,8 @@ class SubscriptionViewSet(UserViewSet):
                                 status=status.HTTP_400_BAD_REQUEST)
             serializer = SubscriptionPostSerializer(
                 data={'user': self.request.user.id, 'author': author.id})
-            serializer.is_valid()
-            serializer.save()
+            if serializer.is_valid():
+                serializer.save()
             subscriptions_serializer = SubscriptionGetSerializer(
                 author, context={'request': request})
             return Response(subscriptions_serializer.data,

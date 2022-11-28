@@ -6,7 +6,6 @@ from rest_framework.decorators import action
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
-
 from .filters import RecipeFilter
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeDestroySerializer, RecipeGetSerializer,

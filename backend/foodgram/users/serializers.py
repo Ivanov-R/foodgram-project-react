@@ -2,16 +2,14 @@ from djoser.serializers import UserSerializer
 from rest_framework import serializers
 
 from recipes.models import Recipe
-
-from .models import Subscription, User
-from .utils import subscribe
+from users.models import Subscription, User
+from users.utils import subscribe
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ("id", "name", "image", "cooking_time")
 
 
 class UserGetSerializer(UserSerializer):
@@ -19,48 +17,56 @@ class UserGetSerializer(UserSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name',
-                  'last_name', 'is_subscribed')
+        fields = ("id", "email", "username", "first_name",
+                  "last_name", "is_subscribed")
 
     def get_is_subscribed(self, value):
-        request = self.context.get('request')
+        request = self.context.get("request")
         user = request.user
         result = subscribe(user, value)
         return result
 
 
 class UserCreateSerializer(UserSerializer):
-
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name',
-                  'last_name', 'password')
+        fields = ("email", "username", "first_name", "last_name", "password")
+
+    def create(self, validated_data):
+        user = User(
+            email=validated_data["email"],
+            username=validated_data["username"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
 
 
-class SubscriptionGetSerializer(UserSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+class SubscriptionGetSerializer(UserGetSerializer):
     recipes = RecipeShortSerializer(read_only=True, many=True)
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name',
-                  'last_name', 'is_subscribed', 'recipes')
-
-    def get_is_subscribed(self, value):
-        request = self.context.get('request')
-        user = request.user
-        result = subscribe(user, value)
-        return result
+        fields = (
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+            "recipes",
+        )
 
 
 class SubscriptionPostSerializer(UserSerializer):
-
     class Meta:
         model = Subscription
-        fields = ('id', 'user', 'author')
+        fields = ("id", "user", "author")
 
     def validate_author(self, value):
-        authors = list(User.objects.values_list('email'))
+        authors = list(User.objects.values_list("email"))
         result = list(map(lambda x: x[0], authors))
         if str(value) not in result:
             raise serializers.ValidationError("Такого автора не существует")
