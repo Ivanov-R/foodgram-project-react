@@ -66,8 +66,6 @@ class SubscriptionPostSerializer(UserSerializer):
         fields = ("id", "user", "author")
 
     def validate_author(self, value):
-        authors = list(User.objects.values_list("email"))
-        result = list(map(lambda x: x[0], authors))
-        if str(value) not in result:
+        if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Такого автора не существует")
         return value

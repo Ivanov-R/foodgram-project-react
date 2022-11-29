@@ -50,10 +50,14 @@ class SubscriptionViewSet(UserViewSet):
                 data={'user': self.request.user.id, 'author': author.id})
             if serializer.is_valid():
                 serializer.save()
-            subscriptions_serializer = SubscriptionGetSerializer(
-                author, context={'request': request})
-            return Response(subscriptions_serializer.data,
-                            status=status.HTTP_201_CREATED)
+                subscriptions_serializer = SubscriptionGetSerializer(
+                    author, context={'request': request})
+                return Response(subscriptions_serializer.data,
+                                status=status.HTTP_201_CREATED)
+            else:
+                return Response(
+                    'Данные не прошли валидацию',
+                    status=status.HTTP_400_BAD_REQUEST)
         if change_subscription.exists():
             change_subscription.delete()
             return Response(f'Вы больше не подписаны на {author}',

@@ -26,9 +26,13 @@ def add_to_or_delete_from_it(
         serializer = picked_serializer(data=data)
         if serializer.is_valid():
             serializer.save()
-        new_serializer = RecipeShortSerializer(recipe)
-        return Response(new_serializer.data,
-                        status=status.HTTP_201_CREATED)
+            new_serializer = RecipeShortSerializer(recipe)
+            return Response(new_serializer.data,
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                'Данные не прошли валидацию',
+                status=status.HTTP_400_BAD_REQUEST)
     if field == 'shopping_recipe':
         recipe_unit = get_object_or_404(
             model, user=request.user, shopping_recipe=recipe
