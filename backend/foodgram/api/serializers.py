@@ -113,7 +113,7 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, value):
         for tag in value:
-            if not Tag.objects.filter(name=tag).exists():
+            if not Tag.objects.filter(id=tag.id).exists():
                 raise serializers.ValidationError("Такого тэга не существует")
         tags_set = set(value)
         if len(value) != len(tags_set):
@@ -121,11 +121,15 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
         return value
 
     def validate_ingredients(self, value):
+        ingredients = []
         for ingredient in value:
-            if not Ingredient.objects.filter(name=ingredient).exists():
+            name = list(ingredient.values())[0]
+            if not Ingredient.objects.filter(
+                    name=name).exists():
                 raise serializers.ValidationError(
                     "Такого ингредиента не существует")
-        ingredients_set = set(value)
+            ingredients.append(name)
+        ingredients_set = set(ingredients)
         if len(value) != len(ingredients_set):
             raise serializers.ValidationError(
                 "Ингредиенты не должны дублироваться")

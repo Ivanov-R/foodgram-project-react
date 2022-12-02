@@ -6,13 +6,18 @@ from users.models import User
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=30, unique=True, verbose_name='name')
+    name = models.CharField(max_length=100, verbose_name='name')
     measurement_unit = models.CharField(
         max_length=30, verbose_name='measurement unit')
 
     class Meta:
         verbose_name = 'Ingredient'
         verbose_name_plural = 'Ingredients'
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "measurement_unit"], name="unique ingredient"
+            )
+        ]
 
     def __str__(self) -> str:
         return self.name
@@ -72,9 +77,8 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Recipe ingredients'
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "ingredient"], name="unique ingredient"
-            )
-        ]
+                fields=["recipe", "ingredient"],
+                name="unique recipe_ingredient")]
 
     def __str__(self):
         return f'{self.recipe} {self.ingredient}'
