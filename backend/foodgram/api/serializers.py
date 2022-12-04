@@ -97,7 +97,7 @@ class RecipePostPatchSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     name = serializers.CharField()
     text = serializers.CharField(required=True)
-    cooking_time = serializers.IntegerField()
+    cooking_time = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = Recipe

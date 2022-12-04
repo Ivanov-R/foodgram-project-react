@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filter
 
-from recipes.models import Recipe, Tag
+from recipes.models import Recipe, Tag, Ingredient
 
 
 class RecipeFilter(filter.FilterSet):
@@ -29,3 +29,11 @@ class RecipeFilter(filter.FilterSet):
         if value and not user.is_anonymous:
             return queryset.filter(shopping_cart_recipes__user=user)
         return queryset
+
+
+class IngredientFilter(filter.FilterSet):
+    name = filter.CharFilter(field_name='name', lookup_expr='istartswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
