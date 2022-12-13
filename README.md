@@ -46,19 +46,20 @@ sudo docker-compose up -d
 
 ## Шаблон наполнения .env
 DEBUG=False
-SECRET_KEY=<ваш ключ>
-DB_ENGINE=django.db.backends.postgresql # указываем, что работаем с postgresql
-DB_NAME=postgres # имя базы данных
-POSTGRES_USER=postgres # логин для подключения к базе данных
-POSTGRES_PASSWORD=123 # пароль для подключения к БД (установите свой)
-DB_HOST=db # название сервиса (контейнера)
-DB_PORT=5432 # порт для подключения к БД
 
-## Доступ к проекту
-Проект доступен по ссылке:
-http://158.160.39.207/
-admin - ivanov2301@gmail.com
-password - 123
+SECRET_KEY=<ваш ключ>
+
+DB_ENGINE=django.db.backends.postgresql # указываем, что работаем с postgresql
+
+DB_NAME=postgres # имя базы данных
+
+POSTGRES_USER=postgres # логин для подключения к базе данных
+
+POSTGRES_PASSWORD=123 # пароль для подключения к БД (установите свой)
+
+DB_HOST=db # название сервиса (контейнера)
+
+DB_PORT=5432 # порт для подключения к БД
 
 ## Команды внутри контейнера
 Команды внутри контейнеров выполняют посредством подкоманды docker-compose exec. 
